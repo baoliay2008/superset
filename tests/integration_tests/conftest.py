@@ -27,9 +27,11 @@ from superset import db
 from superset.extensions import feature_flag_manager
 from superset.utils.core import json_dumps_w_dates
 from superset.utils.database import get_example_database, remove_database
-from tests.integration_tests.test_app import app
+from tests.integration_tests.test_app import app, login
 
 if TYPE_CHECKING:
+    from flask.testing import FlaskClient
+
     from superset.connectors.sqla.models import Database
 
 CTAS_SCHEMA_NAME = "sqllab_test_db"
@@ -73,6 +75,18 @@ def setup_sample_data() -> Any:
         for table in sqla_base.metadata.sorted_tables:
             table.__table__.drop()
         db.session.commit()
+
+
+@pytest.fixture
+def login_as(test_client: "FlaskClient[Any]"):
+    """Fixture with app context and logged in admin user."""
+
+    def _login_as(username: str, password: str = "general"):
+        login(test_client, username=username, password=password)
+
+    yield _login_as
+    # no need to log out as both app_context and test_client are
+    # function level fixtures anyway
 
 
 @pytest.fixture
